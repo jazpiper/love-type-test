@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A/B 테스트 대시보드 - 연애 유형 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.95;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #ff6b6b;
+        }
+
+        .metrics {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .metrics h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .metrics-table th,
+        .metrics-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metrics-table th {
+            background: #f9f9f9;
+            font-weight: 600;
+        }
+
+        .metrics-table .winner {
+            background: #fff5f5;
+            font-weight: 600;
+        }
+
+        .metrics-table .metric-value {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .controls {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .controls h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.02);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .statistical-test {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .statistical-test h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .test-result {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .test-result.significant {
+            background: #e6fffa;
+            border-left: 4px solid #38a169;
+        }
+
+        .test-result.not-significant {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+        }
+
+        .test-result h3 {
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .test-result .p-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.4em;
+            }
+
+            .metrics-table {
+                font-size: 0.9em;
+            }
+
+            .metrics-table th,
+            .metrics-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 A/B 테스트 대시보드</h1>
+            <p>연애 유형 테스트 - 광고 배치 최적화</p>
+        </div>
+
+        <div class="summary" id="summary">
+            <div class="summary-card">
+                <h3>총 사용자</h3>
+                <div class="value" id="totalUsers">-</div>
+            </div>
+            <div class="summary-card">
+                <h3>총 이벤트</h3>
+                <div class="value" id="totalEvents">-</div>
+            </div>
+            <div class="summary-card">
+                <h3>활성 변형</h3>
+                <div class="value" id="activeVariants">-</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>⚙️ 분석 설정</h2>
+            <div class="control-row">
+                <div class="control-group">
+                    <label>테스트 ID</label>
+                    <select id="testIdSelect">
+                        <option value="ad-placement-001">ad-placement-001</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>시작일</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="control-group">
+                    <label>종료일</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+            <button class="btn" onclick="loadMetrics()">📈 메트릭 로드</button>
+        </div>
+
+        <div class="metrics" id="metrics">
+            <h2>📊 변형별 메트릭</h2>
+            <div id="metricsLoading" class="loading">메트릭 로드 중...</div>
+            <table class="metrics-table" id="metricsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>변형</th>
+                        <th>사용자</th>
+                        <th>완료율</th>
+                        <th>공유율</th>
+                        <th>이탈률</th>
+                        <th>평균 세션 (초)</th>
+                        <th>광고/유저</th>
+                    </tr>
+                </thead>
+                <tbody id="metricsBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="statistical-test">
+            <h2>🧪 통계적 유의성 검정</h2>
+            <div class="control-row">
+                <div class="control-group">
+                    <label>비교 메트릭</label>
+                    <select id="metricSelect">
+                        <option value="completion_rate">완료율</option>
+                        <option value="share_rate">공유율</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>변형 A</label>
+                    <select id="variantA">
+                        <option value="A">A: 질문 간 배너 광고</option>
+                        <option value="B">B: 결과 직전 인터스티셜</option>
+                        <option value="C">C: 리워드 광고</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>변형 B</label>
+                    <select id="variantB">
+                        <option value="A">A: 질문 간 배너 광고</option>
+                        <option value="B" selected>B: 결과 직전 인터스티셜</option>
+                        <option value="C">C: 리워드 광고</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="runStatisticalTest()">🔬 검정 실행</button>
+
+            <div id="testResult" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMetrics();
+        });
+
+        // 메트릭 로드
+        async function loadMetrics() {
+            const testId = document.getElementById('testIdSelect').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            const params = new URLSearchParams({ testId });
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            try {
+                const response = await fetch(`/api/ab-metrics?${params}`);
+                const data = await response.json();
+
+                updateSummary(data);
+                updateMetricsTable(data.metrics);
+            } catch (error) {
+                console.error('메트릭 로드 실패:', error);
+                alert('메트릭 로드 실패');
+            }
+        }
+
+        // 요약 업데이트
+        function updateSummary(data) {
+            document.getElementById('totalUsers').textContent =
+                data.summary.totalUsers.toLocaleString();
+            document.getElementById('totalEvents').textContent =
+                data.summary.totalEvents.toLocaleString();
+            document.getElementById('activeVariants').textContent =
+                Object.keys(data.metrics).length;
+        }
+
+        // 메트릭 테이블 업데이트
+        function updateMetricsTable(metrics) {
+            const loading = document.getElementById('metricsLoading');
+            const table = document.getElementById('metricsTable');
+            const tbody = document.getElementById('metricsBody');
+
+            loading.style.display = 'none';
+            table.style.display = 'table';
+            tbody.innerHTML = '';
+
+            const variantNames = {
+                'A': 'A: 질문 간 배너 광고',
+                'B': 'B: 결과 직전 인터스티셜',
+                'C': 'C: 리워드 광고'
+            };
+
+            // 완료율 기준 승자 찾기
+            const winner = Object.entries(metrics)
+                .sort((a, b) => b[1].completionRate - a[1].completionRate)[0];
+
+            for (const [variantId, metric] of Object.entries(metrics)) {
+                const isWinner = variantId === winner[0];
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="${isWinner ? 'winner' : ''}">
+                        ${variantNames[variantId] || variantId}
+                        ${isWinner ? ' 🏆' : ''}
+                    </td>
+                    <td>${metric.totalUsers.toLocaleString()}</td>
+                    <td class="metric-value">${metric.completionRate.toFixed(2)}%</td>
+                    <td class="metric-value">${metric.shareRate.toFixed(2)}%</td>
+                    <td>${metric.churnRate.toFixed(2)}%</td>
+                    <td>${metric.avgSessionTime.toFixed(2)}</td>
+                    <td>${metric.adImpressionsPerUser.toFixed(2)}</td>
+                `;
+
+                tbody.appendChild(row);
+            }
+        }
+
+        // 통계적 유의성 검정
+        async function runStatisticalTest() {
+            const testId = document.getElementById('testIdSelect').value;
+            const metricName = document.getElementById('metricSelect').value;
+            const variantA = document.getElementById('variantA').value;
+            const variantB = document.getElementById('variantB').value;
+
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/ab-statistical-test?testId=${testId}&metricName=${metricName}&variantA=${variantA}&variantB=${variantB}`);
+                const data = await response.json();
+
+                displayTestResult(data);
+            } catch (error) {
+                console.error('검정 실패:', error);
+                alert('검정 실패');
+            }
+        }
+
+        // 검정 결과 표시
+        function displayTestResult(data) {
+            const resultDiv = document.getElementById('testResult');
+            const test = data.statisticalTest;
+
+            resultDiv.style.display = 'block';
+
+            const metricNames = {
+                'completion_rate': '완료율',
+                'share_rate': '공유율'
+            };
+
+            resultDiv.innerHTML = `
+                <div class="test-result ${test.significant ? 'significant' : 'not-significant'}">
+                    <h3>${metricNames[data.metricName]} - ${data.variantA.id} vs ${data.variantB.id}</h3>
+
+                    <div class="p-value">
+                        p-value: <strong>${test.pValue}</strong>
+                        ${test.significant ? '✅ 통계적으로 유의함' : '⚠️ 통계적으로 유의하지 않음'}
+                    </div>
+
+                    <div style="margin-top: 12px;">
+                        <p><strong>Winner:</strong> ${test.winner}</p>
+                        <p><strong>Lift:</strong> ${test.lift > 0 ? '+' : ''}${test.lift}%</p>
+                        <p><strong>Z-score:</strong> ${test.zScore}</p>
+                        <p><strong>Confidence:</strong> ${test.confidence ? test.confidence + '%' : 'N/A'}</p>
+                    </div>
+
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.1);">
+                        <p><strong>${data.variantA.id}:</strong> ${data.variantA.value.toFixed(2)} (${data.variantA.n} users)</p>
+                        <p><strong>${data.variantB.id}:</strong> ${data.variantB.value.toFixed(2)} (${data.variantB.n} users)</p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

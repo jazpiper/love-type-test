@@ -1,0 +1,86 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-02",
+  "activeTests": [
+    {
+      "id": "ad-placement-001",
+      "name": "광고 배치 최적화",
+      "description": "질문 간 배너 광고 vs 결과 직전 인터스티셜 vs 리워드 광고",
+      "status": "active",
+      "startDate": "2026-02-02",
+      "targetEndDate": "2026-02-16",
+      "variants": [
+        {
+          "id": "A",
+          "name": "질문 간 배너 광고",
+          "description": "질문 3회마다 배너 광고 표시 (총 3회)",
+          "weight": 0.33,
+          "config": {
+            "adType": "banner",
+            "showInterval": 3,
+            "maxShows": 3,
+            "positions": [3, 6, 9]
+          }
+        },
+        {
+          "id": "B",
+          "name": "결과 직전 인터스티셜",
+          "description": "모든 질문 후, 결과 직전에 인터스티셜 광고 1회 표시",
+          "weight": 0.33,
+          "config": {
+            "adType": "interstitial",
+            "showInterval": 10,
+            "maxShows": 1,
+            "positions": [10]
+          }
+        },
+        {
+          "id": "C",
+          "name": "리워드 광고",
+          "description": "결과 후 리워드 광고 선택적 시청 (상세 정보 해금)",
+          "weight": 0.34,
+          "config": {
+            "adType": "rewarded",
+            "showInterval": 11,
+            "maxShows": 1,
+            "positions": [11],
+            "reward": "상세 연애 해설 해금"
+          }
+        }
+      ],
+      "metrics": {
+        "primary": [
+          "completion_rate",
+          "ad_revenue",
+          "share_rate"
+        ],
+        "secondary": [
+          "session_time",
+          "churn_rate",
+          "ad_impressions_per_user",
+          "ecpm"
+        ]
+      },
+      "targetSampleSize": {
+        "perVariant": 2500,
+        "total": 7500
+      },
+      "statisticalParameters": {
+        "alpha": 0.05,
+        "power": 0.8,
+        "mde": 0.05
+      }
+    }
+  ],
+  "globalSettings": {
+    "userIdCookie": "ab_user_id",
+    "variantCookie": "ab_variant",
+    "cookieExpirationDays": 30,
+    "trackingEndpoint": "/api/ab-track",
+    "analytics": {
+      "enabled": true,
+      "eventBatchSize": 10,
+      "flushIntervalMs": 5000
+    }
+  }
+}
